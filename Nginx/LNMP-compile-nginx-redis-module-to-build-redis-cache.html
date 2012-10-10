@@ -1,0 +1,261 @@
+<!DOCTYPE html><html><head><meta http-equiv="content-type" content="text/html;charset=utf-8"/><title>LNMP编译安装Redis构建高速Redis缓存</title><meta name="author" content="LazyZhu"/><meta name="keywords" content="nginx,module,redis,lnmp,compile"/><meta name="description" content="如何在LNMP一键包基础上升级Nginx和编译安装Redis2和Srcache等模块，配合Redis构建高速缓存，服务器效率提升数倍以上。"/><link rel="stylesheet" type="text/css" href="/assets/css/main.css"/><link rel="stylesheet" type="text/css" href="/assets/css/pygments.css"/> <!--[if !IE]><script src="/assets/js/main.js"></script><![endif]--></head><body><div class="container"><div class="header"><div id="siteName"> L<u>azy</u>Z<u>hu's</u> H<u>ome</u> <b><font color="red">★The Diaoyu Islands belong to China!★</font></b></div><ul class="menu main"><li class="menu_item"> <a href="/">Home</a></li><li class="menu_item"> <a href="/projects.html">Projects</a></li><li class="menu_item"> <a href="/wiki.html">Wiki</a></li><li class="menu_item"> <a href="/about.html">About</a></li></ul></div><div class="sidebar"><div><center><form id="cse" id="searchbox_005189583365303993202:tnnrmg1lhbi" action="/SearchResults.html"> <input value="005189583365303993202:dwmyxdrq_ny" name="cx" type="hidden"/> <input value="FORID:11" name="cof" type="hidden"/> <input id="q" style="width:110px" name="q" size="75" /> <input value="Search" name="sa" type="submit"/></form></center><h4>分类</h4><ul><li> <a href="/categories.html#Linux"> Linux </a> <sup>[3]</sup></li><li> <a href="/categories.html#Nginx"> <b><font color="blue">Nginx</font></b> </a> <sup>[3]</sup></li><li> <a href="/categories.html#Life"> Life </a> <sup>[1]</sup></li></ul><hr/><h4>标签</h4><ul><li> <a href="/tags.html#script"> script </a> <sup>[2]</sup></li><li> <a href="/tags.html#compile"> <b><font color="blue">compile</font></b> </a> <sup>[2]</sup></li><li> <a href="/tags.html#xshell"> xshell </a> <sup>[2]</sup></li><li> <a href="/tags.html#publickey"> publickey </a> <sup>[1]</sup></li><li> <a href="/tags.html#linux"> linux </a> <sup>[3]</sup></li><li> <a href="/tags.html#blog"> blog </a> <sup>[1]</sup></li><li> <a href="/tags.html#module"> <b><font color="blue">module</font></b> </a> <sup>[2]</sup></li><li> <a href="/tags.html#centos"> centos </a> <sup>[1]</sup></li><li> <a href="/tags.html#windows"> windows </a> <sup>[1]</sup></li><li> <a href="/tags.html#nginx"> <b><font color="blue">nginx</font></b> </a> <sup>[3]</sup></li><li> <a href="/tags.html#memcached"> memcached </a> <sup>[1]</sup></li><li> <a href="/tags.html#static"> static </a> <sup>[1]</sup></li><li> <a href="/tags.html#shell"> shell </a> <sup>[1]</sup></li><li> <a href="/tags.html#ssh"> ssh </a> <sup>[1]</sup></li><li> <a href="/tags.html#gzip"> gzip </a> <sup>[1]</sup></li><li> <a href="/tags.html#redis"> <b><font color="blue">redis</font></b> </a> <sup>[1]</sup></li><li> <a href="/tags.html#lnmp"> <b><font color="blue">lnmp</font></b> </a> <sup>[2]</sup></li><li> <a href="/tags.html#automate"> automate </a> <sup>[2]</sup></li><li> <a href="/tags.html#putty"> putty </a> <sup>[2]</sup></li><li> <a href="/tags.html#kickstart"> kickstart </a> <sup>[1]</sup></li><li> <a href="/tags.html#life"> life </a> <sup>[1]</sup></li></ul><hr/><h4>归档</h4><ul><li><b><font color="blue"><a href="/archive.html#2012">2012</a></font></b></li></ul></div></div><div class="content"><div class="tags"> 分类: /<a class="category" href="/categories.html#Nginx">Nginx</a>/ - 标签: <span class="tag"><a href="/tags.html#nginx">nginx</a></span> <span class="tag"><a href="/tags.html#module">module</a></span> <span class="tag"><a href="/tags.html#redis">redis</a></span> <span class="tag"><a href="/tags.html#lnmp">lnmp</a></span> <span class="tag"><a href="/tags.html#compile">compile</a></span> - 日期: 2012.09.22</div><br/><h1>LNMP编译安装Redis构建高速Redis缓存</h1><p>前面已经讲过<a href="http://lazyzhu.com/Nginx/LNMP-compile-memc-and-srcache-nginx-module-with-memcached.html" title="LNMP编译Memc和Srcache构建高速Memcached缓存">LNMP编译Memc和Srcache构建高速Memcached缓存</a>,这次换另一种被广泛应用的缓存-<code>Redis</code>。<a href="http://redis.io/" title="Redis">Redis</a>实际上是一个高性能的<code>key-value</code>数据库，他可以代替<code>MySQL</code>；它也没有<code>Memcached</code>的<code>1 MB</code>的大小限制，更加自由；同时提供<code>PHP</code>、<code>Python</code>、<code>Ruby</code>等客户端，使用很方便。</p><p>本文同样采用<a href="http://agentzh.org" title="agentzh(章亦春)">agentzh(章亦春)</a>开发的几个Nginx模块：<code>Redis2</code>、<code>Echo</code>、<code>Set-Misc</code>和<code>Srcache</code>，具体原理可以查看agentzh的<a href="https://github.com/agentzh" title="Github">Github</a>页面，还有<a href="http://wiki.nginx.org/HttpRedisModule" title="Redis">Redis</a>模块。接下来将详细介绍怎样在已经安装<a href="http://lnmp.org" title="LNMP">LNMP</a>[Linux+Nginx+MySQL+PHP-FPM(FastCGI)]的基础上，升级Nginx和编译安装上述Nginx模块，同时配置<code>Redis</code>服务器，修改<code>Nginx</code>配置文件，最后做一个简单的性能测试，可与<code>Memcached</code>简单比较下。本文安装测试环境为 <code>CentOS 5.8 x86</code>。</p><br/><h3>1. 停止LNMP服务</h3><div class="highlight"><pre><code class="bash">/root/lnmp stop
+/etc/init.d/nginx stop
+/etc/init.d/mysql stop
+/etc/init.d/memcached stop
+/usr/local/php/sbin/php-fpm stop
+killall nginx mysqld memcached php-cgi
+</code></pre></div><br/><h3>2. 备份LNMP配置</h3><div class="highlight"><pre><code class="bash">mkdir -p ~/src <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ~/src
+<span class="se">\c</span>p -rf /usr/local/nginx/conf ~/src/conf.bak
+<span class="se">\c</span>p -rf /etc/init.d/nginx ~/src/nginx.bak
+</code></pre></div><br/><h3>3. 编译Redis</h3><div class="highlight"><pre><code class="bash">wget -c http://redis.googlecode.com/files/redis-2.4.17.tar.gz -O -|tar xz
+<span class="nb">cd </span>redis-2.4.17
+make
+make install
+mkdir -p /etc/redis
+<span class="nb">cd</span> ../
+mkdir -p /var/redis/6379
+mkdir -p /var/log/redis/
+touch /var/log/redis/6379.log
+useradd -M -r --home-dir /var/redis redis
+chown -R redis:redis /var/log/redis/ /var/redis/
+<span class="se">\c</span>p -pf redis-2.4.17/redis.conf /etc/redis/6379.conf
+sed -i <span class="s1">'s/daemonize no/daemonize yes/g'</span> /etc/redis/6379.conf
+sed -i <span class="s1">'s/redis.pid/redis_6379.pid/g'</span> /etc/redis/6379.conf
+sed -i <span class="s2">"s/^.*bind 127.0.0.1.*/bind 127.0.0.1/g"</span> /etc/redis/6379.conf
+sed -i <span class="s1">'s/loglevel verbose/loglevel notice/g'</span> /etc/redis/6379.conf
+sed -i <span class="s1">'s/logfile stdout/logfile \/var\/log\/redis\/6379.log/g'</span> /etc/redis/6379.conf
+sed -i <span class="s1">'s/dir .\//dir \/var\/redis\/6379/g'</span> /etc/redis/6379.conf
+wget -c https://fzrxefesh.googlecode.com/files/redis_init_script_centos
+<span class="se">\c</span>p -pf redis_init_script_centos /etc/init.d/redis_6379
+chmod +x /etc/init.d/redis_6379
+chkconfig redis_6379 on
+</code></pre></div><br/><h3>4. 编译gperftools</h3><div class="highlight"><pre><code class="bash"><span class="k">if</span> <span class="o">[</span> <span class="sb">`</span>getconf LONG_BIT<span class="sb">`</span> <span class="o">=</span> <span class="s1">'64'</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">    </span>rm -rf /usr/local/libunwind
+    wget -c http://download.savannah.gnu.org/releases/libunwind/libunwind-1.0.1.tar.gz -O -|tar xz
+    <span class="nb">cd </span>libunwind-1.0.1/
+    ./configure --prefix<span class="o">=</span>/usr/local/libunwind
+    make <span class="o">&amp;&amp;</span> make install
+    <span class="nb">echo</span> <span class="s2">"/usr/local/libunwind/lib"</span> &gt;&gt; /etc/ld.so.conf.d/usr_local_lib.conf
+<span class="k">fi</span>
+wget -c http://gperftools.googlecode.com/files/gperftools-2.0.tar.gz -O -|tar xz
+<span class="nb">cd </span>gperftools-2.0/
+./configure
+make <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ../
+<span class="nb">echo</span> <span class="s2">"/usr/local/lib"</span> &gt; /etc/ld.so.conf.d/usr_local_lib.conf
+/sbin/ldconfig
+mkdir -p /tmp/tcmalloc
+chmod 0777 /tmp/tcmalloc
+</code></pre></div><br/><h3>5. 下载Nginx源码包</h3><div class="highlight"><pre><code class="bash">wget -c --no-check-certificate https://github.com/agentzh/redis2-nginx-module/tarball/master -O -|tar xz <span class="o">&amp;&amp;</span> mv -f agentzh-redis2-nginx-module* redis2-nginx-module
+wget -c --no-check-certificate https://github.com/agentzh/echo-nginx-module/tarball/master -O -|tar xz <span class="o">&amp;&amp;</span> mv -f agentzh-echo-nginx-module* <span class="nb">echo</span>-nginx-module
+wget -c --no-check-certificate https://github.com/simpl/ngx_devel_kit/tarball/master -O -|tar xz <span class="o">&amp;&amp;</span> mv -f simpl-ngx_devel_kit* ngx_devel_kit
+wget -c --no-check-certificate https://github.com/agentzh/set-misc-nginx-module/tarball/master -O -|tar xz <span class="o">&amp;&amp;</span> mv -f agentzh-set-misc-nginx-module* <span class="nb">set</span>-misc-nginx-module
+wget -c --no-check-certificate https://github.com/agentzh/srcache-nginx-module/tarball/master -O -|tar xz <span class="o">&amp;&amp;</span> mv -f agentzh-srcache-nginx-module* srcache-nginx-module
+wget -c http://people.freebsd.org/~osa/ngx_http_redis-0.3.6.tar.gz -O -|tar xz
+wget -c http://zlib.net/zlib-1.2.7.tar.gz -O -|tar xz
+wget -c ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.31.tar.gz -O -|tar xz
+wget -c http://www.openssl.org/source/openssl-1.0.1c.tar.gz -O -|tar xz
+wget -c http://nginx.org/download/nginx-1.2.4.tar.gz -O -|tar xz
+wget -c https://fzrxefesh.googlecode.com/files/nginx-1.2.4-upstream.patch
+</code></pre></div><br/><h3>6. 编译Nginx</h3><div class="highlight"><pre><code class="bash">rm -rf /usr/local/nginx
+<span class="nb">cd </span>nginx-1.2.4/
+patch -p1 &lt; ../nginx-1.2.4-upstream.patch
+./configure  --prefix<span class="o">=</span>/usr/local/nginx <span class="se">\</span>
+--user<span class="o">=</span>www --group<span class="o">=</span>www <span class="se">\</span>
+--with-zlib<span class="o">=</span>/root/src/zlib-1.2.7 <span class="se">\</span>
+--with-pcre<span class="o">=</span>/root/src/pcre-8.31 <span class="se">\</span>
+--with-openssl<span class="o">=</span>/root/src/openssl-1.0.1c <span class="se">\</span>
+--with-http_gzip_static_module <span class="se">\</span>
+--with-http_stub_status_module <span class="se">\</span>
+--with-http_realip_module <span class="se">\</span>
+--with-http_ssl_module <span class="se">\</span>
+--with-ipv6 <span class="se">\</span>
+--with-google_perftools_module <span class="se">\</span>
+--add-module<span class="o">=</span>/root/src/ngx_http_redis-0.3.6 <span class="se">\</span>
+--add-module<span class="o">=</span>/root/src/redis2-nginx-module <span class="se">\</span>
+--add-module<span class="o">=</span>/root/src/echo-nginx-module <span class="se">\</span>
+--add-module<span class="o">=</span>/root/src/ngx_devel_kit <span class="se">\</span>
+--add-module<span class="o">=</span>/root/src/set-misc-nginx-module <span class="se">\</span>
+--add-module<span class="o">=</span>/root/src/srcache-nginx-module <span class="se">\</span>
+--with-cc-opt<span class="o">=</span><span class="s1">'-O3'</span>
+make <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ../
+chkconfig nginx on
+rm -rf /usr/local/nginx/conf
+<span class="se">\c</span>p -rf ~/src/conf.bak /usr/local/nginx/conf
+<span class="se">\c</span>p -rf /usr/local/nginx/conf/nginx.conf /usr/local/nginx/conf/nginx.conf.bak
+</code></pre></div><br/><h3>7. 修改Nginx配置</h3><p>Nginx配置文件在LNMP的基础上添加了<code>Redis</code>、<code>Redis2</code>和<code>Srcache</code>等模块的参数，以<code>php</code>结尾的请求结果都会被缓存。页面再次被请求时，nginx直接从Redis中读取，跳过了php，所以效率大大提高。</p><p><code>nginx.conf</code>配置如下：</p><div class="highlight"><pre><code class="bash">user       www www;
+worker_processes 1;
+error_log  /home/wwwlogs/nginx_error.log crit;
+pid           /usr/local/nginx/logs/nginx.pid;
+google_perftools_profiles       /tmp/tcmalloc;
+<span class="c">#Specifies the value for maximum file descriptors that can be opened by this process.</span>
+worker_rlimit_nofile 51200;
+events <span class="o">{</span>
+    use epoll;
+    worker_connections 51200;
+<span class="o">}</span>
+http <span class="o">{</span>
+    include       mime.types;
+    default_type  application/octet-stream;
+    server_names_hash_bucket_size 128;
+    client_header_buffer_size     32k;
+    large_client_header_buffers 4 32k;
+    client_max_body_size          50m;
+    <span class="c">#sendfile   on;</span>
+    <span class="c">#tcp_nopush  on;</span>
+    tcp_nodelay on;
+    keepalive_timeout 60;
+    fastcgi_connect_timeout       300;
+    fastcgi_send_timeout          300;
+    fastcgi_read_timeout          300;
+    fastcgi_buffer_size           64k;
+    fastcgi_buffers             4 64k;
+    fastcgi_busy_buffers_size    128k;
+    fastcgi_temp_file_write_size 256k;
+    gzip on;
+    gzip_vary on;
+    gzip_min_length     1k;
+    gzip_buffers     4 16k;
+    gzip_http_version  1.0;
+    gzip_comp_level      5;
+    gzip_types  text/plain application/x-javascript text/css application/xml;
+    <span class="c">#limit_zone  crawler  $binary_remote_addr  10m;</span>
+    upstream redis <span class="o">{</span>
+        server 127.0.0.1:6379;
+        keepalive 1024;
+    <span class="o">}</span>
+    <span class="c">#log format</span>
+    log_format  access  <span class="s1">'$remote_addr - $remote_user [$time_local] "$request" '</span>
+                        <span class="s1">'$status $body_bytes_sent "$http_referer" '</span>
+                        <span class="s1">'"$http_user_agent" $http_x_forwarded_for'</span>;
+    server <span class="o">{</span>
+        listen      80;
+        server_name lazyzhu.com;
+        root  /home/wwwroot;
+        location / <span class="o">{</span>
+            index index.html index.htm index.php;
+        <span class="o">}</span>
+        <span class="c">## redis-nginx-module</span>
+        <span class="nv">location</span> <span class="o">=</span> /redis <span class="o">{</span>
+            internal;
+            <span class="nb">set</span> <span class="nv">$redis_key</span> <span class="nv">$args</span>;
+            redis_pass redis;
+        <span class="o">}</span>
+        <span class="c">## redis2-nginx-module</span>
+        <span class="nv">location</span> <span class="o">=</span> /redis2 <span class="o">{</span>
+            internal;
+            set_unescape_uri <span class="nv">$exptime</span> <span class="nv">$arg_exptime</span>;
+            set_unescape_uri <span class="nv">$key</span> <span class="nv">$arg_key</span>;
+            redis2_query <span class="nb">set</span> <span class="nv">$key</span> <span class="nv">$echo_request_body</span>;
+            redis2_query expire <span class="nv">$key</span> <span class="nv">$exptime</span>;
+            redis2_pass redis;
+        <span class="o">}</span>
+        <span class="c">##  folder disable memcached</span>
+        location ^~ /<span class="o">(</span>wp-admin|admin<span class="o">)</span>/ <span class="o">{</span>
+            root          /home/wwwroot;
+            fastcgi_pass  unix:/tmp/php-cgi.sock;
+            fastcgi_index index.php;
+            include       fcgi.conf;
+        <span class="o">}</span>
+        <span class="c">## file disable memcached</span>
+        location ~ .*<span class="o">(</span>admin|p<span class="o">)</span><span class="se">\.</span><span class="o">(</span>php|php5<span class="o">)</span>?<span class="nv">$ </span><span class="o">{</span>
+            root          /home/wwwroot;
+            fastcgi_pass  unix:/tmp/php-cgi.sock;
+            fastcgi_index index.php;
+            include       fcgi.conf;
+        <span class="o">}</span>
+        location ~ .*<span class="se">\.</span><span class="o">(</span>php|php5<span class="o">)</span>?<span class="nv">$ </span><span class="o">{</span>
+            <span class="c">## srcache-nginx-module</span>
+            <span class="nb">set</span> <span class="nv">$key</span> <span class="nv">$uri</span>;
+            set_escape_uri <span class="nv">$escaped_key</span> <span class="nv">$key</span>;
+            srcache_fetch GET /redis <span class="nv">$key</span>;
+            srcache_store PUT /redis2 <span class="nv">key</span><span class="o">=</span><span class="nv">$escaped_key</span>&amp;exptime<span class="o">=</span>300;
+            fastcgi_pass  unix:/tmp/php-cgi.sock;
+            fastcgi_index index.php;
+            include       fcgi.conf;
+        <span class="o">}</span>
+        location ~ .*<span class="se">\.</span><span class="o">(</span>js|css<span class="o">)</span>?<span class="nv">$ </span><span class="o">{</span>
+            expires  12h;
+        <span class="o">}</span>
+        location ~ .*<span class="se">\.</span><span class="o">(</span>gif|jpg|jpeg|png|bmp|swf<span class="o">)</span><span class="nv">$ </span><span class="o">{</span>
+            expires  30d;
+        <span class="o">}</span>
+        location /status <span class="o">{</span>
+            stub_status  on;
+            access_log  off;
+        <span class="o">}</span>
+        access_log  /home/wwwlogs/access.log  access;
+    <span class="o">}</span>
+include vhost/*.conf;
+<span class="o">}</span>
+</code></pre></div><p>位于<code>vhost</code>目录的<code>lazyzhu.com.conf</code>配置如下：</p><div class="highlight"><pre><code class="bash">log_format  lazyzhu.com  <span class="s1">'$remote_addr - $remote_user [$time_local] $request '</span>
+             <span class="s1">'$status $body_bytes_sent $http_referer '</span>
+             <span class="s1">'$http_user_agent $http_x_forwarded_for'</span>;
+server <span class="o">{</span>
+    listen       80;
+    server_name  lazyzhu.com;
+    root  /home/wwwroot/lazyzhu.com;
+    location / <span class="o">{</span>
+        index index.html index.htm index.php default.html default.htm default.php;
+    <span class="o">}</span>
+    include none.conf;
+    <span class="c">## redis-nginx-module</span>
+    <span class="nv">location</span> <span class="o">=</span> /redis <span class="o">{</span>
+        internal;
+        <span class="nb">set</span> <span class="nv">$redis_key</span> <span class="nv">$args</span>;
+        redis_pass redis;
+    <span class="o">}</span>
+    <span class="c">## redis2-nginx-module</span>
+    <span class="nv">location</span> <span class="o">=</span> /redis2 <span class="o">{</span>
+        internal;
+        set_unescape_uri <span class="nv">$exptime</span> <span class="nv">$arg_exptime</span>;
+        set_unescape_uri <span class="nv">$key</span> <span class="nv">$arg_key</span>;
+        redis2_query <span class="nb">set</span> <span class="nv">$key</span> <span class="nv">$echo_request_body</span>;
+        redis2_query expire <span class="nv">$key</span> <span class="nv">$exptime</span>;
+        redis2_pass redis;
+    <span class="o">}</span>
+    <span class="c">## folder disable memcached</span>
+    location ^~ /<span class="o">(</span>wp-admin|admin<span class="o">)</span>/ <span class="o">{</span>
+        root          /home/wwwroot;
+        fastcgi_pass  unix:/tmp/php-cgi.sock;
+        fastcgi_index index.php;
+        include       fcgi.conf;
+    <span class="o">}</span>
+    <span class="c">## file disable memcached</span>
+    location ~ .*<span class="o">(</span>admin|p<span class="o">)</span><span class="se">\.</span><span class="o">(</span>php|php5<span class="o">)</span>?<span class="nv">$ </span><span class="o">{</span>
+        root          /home/wwwroot;
+        fastcgi_pass  unix:/tmp/php-cgi.sock;
+        fastcgi_index index.php;
+        include       fcgi.conf;
+    <span class="o">}</span>
+    location ~ .*<span class="se">\.</span><span class="o">(</span>php|php5<span class="o">)</span>?<span class="nv">$ </span><span class="o">{</span>
+        <span class="c">## srcache-nginx-module</span>
+        <span class="nb">set</span> <span class="nv">$key</span> <span class="nv">$uri</span>;
+        set_escape_uri <span class="nv">$escaped_key</span> <span class="nv">$key</span>;
+        srcache_fetch GET /redis <span class="nv">$key</span>;
+        srcache_store PUT /redis2 <span class="nv">key</span><span class="o">=</span><span class="nv">$escaped_key</span>&amp;exptime<span class="o">=</span>300;
+        fastcgi_pass  unix:/tmp/php-cgi.sock;
+        fastcgi_index index.php;
+        include       fcgi.conf;
+    <span class="o">}</span>
+    location ~ .*<span class="se">\.</span><span class="o">(</span>js|css<span class="o">)</span>?<span class="nv">$ </span><span class="o">{</span>
+        expires  12h;
+    <span class="o">}</span>
+    location ~ .*<span class="se">\.</span><span class="o">(</span>gif|jpg|jpeg|png|bmp|swf<span class="o">)</span><span class="nv">$ </span><span class="o">{</span>
+        expires  30d;
+    <span class="o">}</span>
+    location /status <span class="o">{</span>
+        stub_status  on;
+        access_log  off;
+    <span class="o">}</span>
+    access_log  /home/wwwlogs/lazyzhu.com.log  lazyzhu.com;
+<span class="o">}</span>
+</code></pre></div><br/><h3>8. 启动LNMP服务</h3><div class="highlight"><pre><code class="bash">/etc/init.d/nginx start
+/etc/init.d/mysql start
+/etc/init.d/php-fpm start
+/etc/init.d/redis_6379 start
+</code></pre></div><br/><h3>9. 性能测试比较</h3><p>测试环境是一个VMware虚拟机，操作系统为CentOS 5.8，内存256M，双核。Redis最大并发数为1024。</p><p>测试分为Nginx<code>一个worker进程</code>和<code>两个worker进程</code>，都用<code>Apache</code>的<code>ab</code>程序进行压力测试，请求次数为<code>20000</code>，并发数分别为<code>100</code>和<code>1000</code>。</p><p>测试程序为<code>phpinfo.php</code>：</p><div class="highlight"><pre><code class="bash">&lt;?
+phpinfo<span class="o">()</span>;
+?&gt;
+</code></pre></div><p>测试结果如下：</p><blockquote><p>开启Redis缓存-100并发数-一个worker进程</p></blockquote><p><img src="/images/2012/2012-09-22-ab-100-1-redis.png" alt="ab-100-1-redis.png"/></p><blockquote><p>开启Redis缓存-100并发数-两个worker进程</p></blockquote><p><img src="/images/2012/2012-09-22-ab-100-2-redis.png" alt="ab-100-2-redis.png"/></p><p>通过对比可以发现，开启Redis缓存后，<code>两个worker进程</code>比<code>一个worker进程</code>优异，但优势不是很明显。</p><br/><blockquote><p>开启Redis缓存-1000并发数-一个worker进程</p></blockquote><p><img src="/images/2012/2012-09-22-ab-1000-1-redis.png" alt="ab-1000-1-redis.png"/></p><blockquote><p>开启Redis缓存-1000并发数-两个worker进程</p></blockquote><p><img src="/images/2012/2012-09-22-ab-1000-2-redis.png" alt="ab-1000-2-redis.png"/></p><blockquote><p>开启Redis缓存-1000并发数-三个worker进程</p></blockquote><p><img src="/images/2012/2012-09-22-ab-1000-3-redis.png" alt="ab-1000-3-redis.png"/></p><blockquote><p>无Redis缓存-1000并发数-一个worker进程</p></blockquote><p><img src="/images/2012/2012-09-22-ab-1000-1-noredis.png" alt="ab-1000-1-noredis.png"/></p><p>通过对比可以发现，开启Redis缓存后，<code>两个worker进程</code>比<code>一个worker进程</code>优异，而且十分明显，而<code>三个worker进程</code>与<code>两个worker进程</code>相差不多，这与CPU为2核对应，多个worker未必提升性能，所以建议worker数设置为与CPU核数相同。也可得出高并发下，CPU多核的优势。</p><p>由于测试php简单、未涉及数据库、测试环境等因素，这个测试结果对比还不明显，在实际应用中差距还要明显得多。</p><br/><h2>可能感兴趣的文章：</h2><ul><li><a href="/Nginx/LNMP-compile-memc-and-srcache-nginx-module-with-memcached.html">LNMP编译Memc和Srcache构建高速Memcached缓存</a></li><li><a href="/Nginx/How-to-use-nginx-GzipStatic-module-to-reduce-resource-usage.html">巧用Nginx的GzipStatic模块来减少服务器资源占用</a></li></ul><div class="ds-thread" data-thread-key="" data-title="" data-author-key="" data-url=""></div> <script>var duoshuoQuery={short_name:"lazyzhu"};(function(){var e=document.createElement("script");e.type="text/javascript",e.async=!0,e.src="http://static.duoshuo.com/embed.js",e.charset="UTF-8",(document.getElementsByTagName("head")[0]||document.getElementsByTagName("body")[0]).appendChild(e)})()</script></div></div><div class="footer"> © 2012 <a href="/about.html">LazyZhu</a> All Rights Reserved. Powered by <a rel="Hostshare" href="http://my.hostshare.cn/cart.php">Hostshare</a> & <a rel="Github" href="http://pages.github.com">Github</a>.</div></body></html>

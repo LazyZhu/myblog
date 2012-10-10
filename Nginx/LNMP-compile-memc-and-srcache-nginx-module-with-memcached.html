@@ -1,0 +1,238 @@
+<!DOCTYPE html><html><head><meta http-equiv="content-type" content="text/html;charset=utf-8"/><title>LNMP编译Memc和Srcache构建高速Memcached缓存</title><meta name="author" content="LazyZhu"/><meta name="keywords" content="nginx,module,memcached,lnmp,compile"/><meta name="description" content="文章介绍了如何在LNMP一键包基础上升级Nginx和编译安装Memc和Srcache模块，配合Memcached构建高速缓存，服务器效率提升数倍以上。"/><link rel="stylesheet" type="text/css" href="/assets/css/main.css"/><link rel="stylesheet" type="text/css" href="/assets/css/pygments.css"/> <!--[if !IE]><script src="/assets/js/main.js"></script><![endif]--></head><body><div class="container"><div class="header"><div id="siteName"> L<u>azy</u>Z<u>hu's</u> H<u>ome</u> <b><font color="red">★The Diaoyu Islands belong to China!★</font></b></div><ul class="menu main"><li class="menu_item"> <a href="/">Home</a></li><li class="menu_item"> <a href="/projects.html">Projects</a></li><li class="menu_item"> <a href="/wiki.html">Wiki</a></li><li class="menu_item"> <a href="/about.html">About</a></li></ul></div><div class="sidebar"><div><center><form id="cse" id="searchbox_005189583365303993202:tnnrmg1lhbi" action="/SearchResults.html"> <input value="005189583365303993202:dwmyxdrq_ny" name="cx" type="hidden"/> <input value="FORID:11" name="cof" type="hidden"/> <input id="q" style="width:110px" name="q" size="75" /> <input value="Search" name="sa" type="submit"/></form></center><h4>分类</h4><ul><li> <a href="/categories.html#Linux"> Linux </a> <sup>[3]</sup></li><li> <a href="/categories.html#Nginx"> <b><font color="blue">Nginx</font></b> </a> <sup>[3]</sup></li><li> <a href="/categories.html#Life"> Life </a> <sup>[1]</sup></li></ul><hr/><h4>标签</h4><ul><li> <a href="/tags.html#script"> script </a> <sup>[2]</sup></li><li> <a href="/tags.html#compile"> <b><font color="blue">compile</font></b> </a> <sup>[2]</sup></li><li> <a href="/tags.html#xshell"> xshell </a> <sup>[2]</sup></li><li> <a href="/tags.html#publickey"> publickey </a> <sup>[1]</sup></li><li> <a href="/tags.html#linux"> linux </a> <sup>[3]</sup></li><li> <a href="/tags.html#blog"> blog </a> <sup>[1]</sup></li><li> <a href="/tags.html#module"> <b><font color="blue">module</font></b> </a> <sup>[2]</sup></li><li> <a href="/tags.html#centos"> centos </a> <sup>[1]</sup></li><li> <a href="/tags.html#windows"> windows </a> <sup>[1]</sup></li><li> <a href="/tags.html#nginx"> <b><font color="blue">nginx</font></b> </a> <sup>[3]</sup></li><li> <a href="/tags.html#memcached"> <b><font color="blue">memcached</font></b> </a> <sup>[1]</sup></li><li> <a href="/tags.html#static"> static </a> <sup>[1]</sup></li><li> <a href="/tags.html#shell"> shell </a> <sup>[1]</sup></li><li> <a href="/tags.html#ssh"> ssh </a> <sup>[1]</sup></li><li> <a href="/tags.html#gzip"> gzip </a> <sup>[1]</sup></li><li> <a href="/tags.html#redis"> redis </a> <sup>[1]</sup></li><li> <a href="/tags.html#lnmp"> <b><font color="blue">lnmp</font></b> </a> <sup>[2]</sup></li><li> <a href="/tags.html#automate"> automate </a> <sup>[2]</sup></li><li> <a href="/tags.html#putty"> putty </a> <sup>[2]</sup></li><li> <a href="/tags.html#kickstart"> kickstart </a> <sup>[1]</sup></li><li> <a href="/tags.html#life"> life </a> <sup>[1]</sup></li></ul><hr/><h4>归档</h4><ul><li><b><font color="blue"><a href="/archive.html#2012">2012</a></font></b></li></ul></div></div><div class="content"><div class="tags"> 分类: /<a class="category" href="/categories.html#Nginx">Nginx</a>/ - 标签: <span class="tag"><a href="/tags.html#nginx">nginx</a></span> <span class="tag"><a href="/tags.html#module">module</a></span> <span class="tag"><a href="/tags.html#memcached">memcached</a></span> <span class="tag"><a href="/tags.html#lnmp">lnmp</a></span> <span class="tag"><a href="/tags.html#compile">compile</a></span> - 日期: 2012.09.12</div><br/><h1>LNMP编译Memc和Srcache构建高速Memcached缓存</h1><p><a href="http://nginx.org" title="Nginx">Nginx</a>是一款新的轻量高效的<code>Web</code>和<code>Proxy</code>服务器，已被广泛应用。而缓存的应用是为了提高性能，现今几乎所有互联网应用都有，<a href="http://memcached.org" title="Memcached">Memcached</a>是一个被广泛使用的分布式缓存系统，传统上是通过PHP的<code>php-memached</code>扩展操作<code>memcached</code>，但是这种缓存机制效率低下，无法完全体现缓存应有的高效性。幸好有了<a href="http://agentzh.org" title="agentzh(章亦春)">agentzh(章亦春)</a>开发的两个Nginx模块：<code>Memc</code>和<code>srcache</code>，具体原理可以查看agentzh的<a href="https://github.com/agentzh" title="Github">Github</a>页面。接下来将详细介绍怎样在已经安装<a href="http://lnmp.org" title="LNMP">LNMP</a>[Linux+Nginx+MySQL+PHP-FPM(FastCGI)]的基础上，升级Nginx和编译安装<code>Memc</code>和<code>Srcache</code>模块，同时配置<code>Memcached</code>服务器，修改<code>Nginx</code>配置文件，最后还有一个简单的性能测试。本文安装测试环境为 <code>CentOS 5.8 x86</code>。</p><br/><h3>1. 停止LNMP服务</h3><div class="highlight"><pre><code class="bash">/root/lnmp stop
+/etc/init.d/nginx stop
+/etc/init.d/mysql stop
+/etc/init.d/memcached stop
+/usr/local/php/sbin/php-fpm stop
+killall nginx mysqld memcached php-cgi
+</code></pre></div><br/><h3>2. 备份LNMP配置</h3><div class="highlight"><pre><code class="bash">mkdir -p ~/src <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ~/src
+<span class="se">\c</span>p -rf /usr/local/nginx/conf ~/src/conf.bak
+<span class="se">\c</span>p -rf /etc/init.d/nginx ~/src/nginx.bak
+</code></pre></div><br/><h3>3. 编译libevent库</h3><div class="highlight"><pre><code class="bash">rm -rf /usr/local/libevent
+wget -c http://ftp.heanet.ie/mirrors/sourceforge/l/le/levent/libevent/libevent-2.0/libevent-2.0.20-stable.tar.gz -O -|tar xz
+<span class="nb">cd </span>libevent-2.0.20-stable/
+./configure --prefix<span class="o">=</span>/usr/local/libevent
+make <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ../
+<span class="nb">echo</span> <span class="s2">"/usr/local/libevent/lib"</span> &gt;&gt; /etc/ld.so.conf
+ln -s /usr/local/libevent/lib/libevent-2.0.so.5  /lib/libevent-2.0.so.5
+/sbin/ldconfig
+</code></pre></div><br/><h3>4. 编译Memcached</h3><div class="highlight"><pre><code class="bash">rm -rf /usr/local/memcached
+wget -c http://memcached.googlecode.com/files/memcached-1.4.15.tar.gz -O -|tar xz
+<span class="nb">cd </span>memcached-1.4.15/
+./configure --prefix<span class="o">=</span>/usr/local/memcached --with-libevent<span class="o">=</span>/usr/local/libevent
+make <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ../
+ln /usr/local/memcached/bin/memcached /usr/bin/memcached
+useradd -s /sbin/nologin nobody
+mkdir -p /var/lock/subsys
+touch /var/lock/subsys/memcached
+wget -c http://fzrxefesh.googlecode.com/files/memcached-init
+cp memcached-init /etc/init.d/memcached
+chmod +x /etc/init.d/memcached
+chkconfig memcached on
+/etc/init.d/memcached start
+</code></pre></div><br/><h3>5. 编译gperftools</h3><div class="highlight"><pre><code class="bash"><span class="k">if</span> <span class="o">[</span> <span class="sb">`</span>getconf LONG_BIT<span class="sb">`</span> <span class="o">=</span> <span class="s1">'64'</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">    </span>rm -rf /usr/local/libunwind
+    wget -c http://download.savannah.gnu.org/releases/libunwind/libunwind-1.0.1.tar.gz -O -|tar xz
+    <span class="nb">cd </span>libunwind-1.0.1/
+    ./configure --prefix<span class="o">=</span>/usr/local/libunwind
+    make <span class="o">&amp;&amp;</span> make install
+    <span class="nb">echo</span> <span class="s2">"/usr/local/libunwind/lib"</span> &gt;&gt; /etc/ld.so.conf.d/usr_local_lib.conf
+<span class="k">fi</span>
+wget -c http://gperftools.googlecode.com/files/gperftools-2.0.tar.gz -O -|tar xz
+<span class="nb">cd </span>gperftools-2.0/
+./configure
+make <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ../
+<span class="nb">echo</span> <span class="s2">"/usr/local/lib"</span> &gt; /etc/ld.so.conf.d/usr_local_lib.conf
+/sbin/ldconfig
+mkdir -p /tmp/tcmalloc
+chmod 0777 /tmp/tcmalloc
+</code></pre></div><br/><h3>6. 下载Nginx源码包</h3><div class="highlight"><pre><code class="bash">wget -c --no-check-certificate https://github.com/agentzh/memc-nginx-module/tarball/master -O -|tar xz <span class="o">&amp;&amp;</span> mv -f agentzh-memc-nginx-module* memc-nginx-module
+wget -c --no-check-certificate https://github.com/agentzh/srcache-nginx-module/tarball/master -O -|tar xz <span class="o">&amp;&amp;</span> mv -f agentzh-srcache-nginx-module* srcache-nginx-module
+wget -c http://zlib.net/zlib-1.2.7.tar.gz -O -|tar xz
+wget -c ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.31.tar.gz -O -|tar xz
+wget -c http://www.openssl.org/source/openssl-1.0.1c.tar.gz -O -|tar xz
+wget -c http://nginx.org/download/nginx-1.2.4.tar.gz -O -|tar xz
+</code></pre></div><br/><h3>7. 编译Nginx</h3><div class="highlight"><pre><code class="bash">rm -rf /usr/local/nginx
+<span class="nb">cd </span>nginx-1.2.4/
+./configure  --prefix<span class="o">=</span>/usr/local/nginx <span class="se">\</span>
+--user<span class="o">=</span>www --group<span class="o">=</span>www <span class="se">\</span>
+--with-zlib<span class="o">=</span>/root/src/zlib-1.2.7 <span class="se">\</span>
+--with-pcre<span class="o">=</span>/root/src/pcre-8.31 <span class="se">\</span>
+--with-openssl<span class="o">=</span>/root/src/openssl-1.0.1c <span class="se">\</span>
+--with-http_gzip_static_module <span class="se">\</span>
+--with-http_stub_status_module <span class="se">\</span>
+--with-http_realip_module <span class="se">\</span>
+--with-http_ssl_module <span class="se">\</span>
+--with-ipv6 <span class="se">\</span>
+--with-google_perftools_module <span class="se">\</span>
+--add-module<span class="o">=</span>/root/src/memc-nginx-module <span class="se">\</span>
+--add-module<span class="o">=</span>/root/src/srcache-nginx-module <span class="se">\</span>
+--with-cc-opt<span class="o">=</span><span class="s1">'-O3'</span>
+make <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ../
+chkconfig nginx on
+rm -rf /usr/local/nginx/conf
+<span class="se">\c</span>p -rf ~/src/conf.bak /usr/local/nginx/conf
+<span class="se">\c</span>p -rf /usr/local/nginx/conf/nginx.conf /usr/local/nginx/conf/nginx.conf.bak
+</code></pre></div><br/><h3>8. 修改Nginx配置</h3><p>Nginx配置文件在LNMP的基础上添加了<code>Memc</code>和<code>srcache</code>参数，以<code>php</code>结尾的请求结果都会被缓存。页面再次被请求时，nginx直接从memcached中读取，跳过了php，所以效率大大提高。</p><p><code>nginx.conf</code>配置如下：</p><div class="highlight"><pre><code class="bash">user       www www;
+worker_processes 1;
+error_log  /home/wwwlogs/nginx_error.log crit;
+pid           /usr/local/nginx/logs/nginx.pid;
+google_perftools_profiles       /tmp/tcmalloc;
+<span class="c">#Specifies the value for maximum file descriptors that can be opened by this process.</span>
+worker_rlimit_nofile 51200;
+events <span class="o">{</span>
+    use epoll;
+    worker_connections 51200;
+<span class="o">}</span>
+http <span class="o">{</span>
+    include       mime.types;
+    default_type  application/octet-stream;
+    server_names_hash_bucket_size 128;
+    client_header_buffer_size     32k;
+    large_client_header_buffers 4 32k;
+    client_max_body_size          50m;
+    <span class="c">#sendfile   on;</span>
+    <span class="c">#tcp_nopush  on;</span>
+    tcp_nodelay on;
+    keepalive_timeout 60;
+    fastcgi_connect_timeout       300;
+    fastcgi_send_timeout          300;
+    fastcgi_read_timeout          300;
+    fastcgi_buffer_size           64k;
+    fastcgi_buffers             4 64k;
+    fastcgi_busy_buffers_size    128k;
+    fastcgi_temp_file_write_size 256k;
+    gzip on;
+    gzip_vary on;
+    gzip_min_length     1k;
+    gzip_buffers     4 16k;
+    gzip_http_version  1.0;
+    gzip_comp_level      5;
+    gzip_types  text/plain application/x-javascript text/css application/xml;
+    <span class="c">#limit_zone  crawler  $binary_remote_addr  10m;</span>
+    upstream memcached <span class="o">{</span>
+        server 127.0.0.1:11211;
+        keepalive 512;
+    <span class="o">}</span>
+    <span class="c">#log format</span>
+    log_format  access  <span class="s1">'$remote_addr - $remote_user [$time_local] "$request" '</span>
+                        <span class="s1">'$status $body_bytes_sent "$http_referer" '</span>
+                        <span class="s1">'"$http_user_agent" $http_x_forwarded_for'</span>;
+    server <span class="o">{</span>
+        listen      80;
+        server_name lazyzhu.com;
+        root  /home/wwwroot;
+        location / <span class="o">{</span>
+            index index.html index.htm index.php;
+        <span class="o">}</span>
+        <span class="c">## memc-nginx-module</span>
+        location /memc <span class="o">{</span>
+            internal;
+            memc_connect_timeout 100ms;
+            memc_send_timeout    100ms;
+            memc_read_timeout    100ms;
+            <span class="nb">set</span> <span class="nv">$memc_key</span> <span class="nv">$query_string</span>;
+            <span class="nb">set</span> <span class="nv">$memc_exptime</span>       300;
+            memc_pass memcached;
+        <span class="o">}</span>
+        <span class="c">##  folder disable memcached</span>
+        location ^~ /<span class="o">(</span>wp-admin|admin<span class="o">)</span>/ <span class="o">{</span>
+            root          /home/wwwroot;
+            fastcgi_pass  unix:/tmp/php-cgi.sock;
+            fastcgi_index index.php;
+            include       fcgi.conf;
+        <span class="o">}</span>
+        <span class="c">## file disable memcached</span>
+        location ~ .*<span class="o">(</span>admin|phpinfo<span class="o">)</span><span class="se">\.</span><span class="o">(</span>php|php5<span class="o">)</span>?<span class="nv">$ </span><span class="o">{</span>
+            root          /home/wwwroot;
+            fastcgi_pass  unix:/tmp/php-cgi.sock;
+            fastcgi_index index.php;
+            include       fcgi.conf;
+        <span class="o">}</span>
+        location ~ .*<span class="se">\.</span><span class="o">(</span>php|php5<span class="o">)</span>?<span class="nv">$ </span><span class="o">{</span>
+            <span class="c">## srcache-nginx-module</span>
+            <span class="nb">set</span> <span class="nv">$key</span> <span class="nv">$uri$args</span>;
+            srcache_fetch GET /memc <span class="nv">$key</span>;
+            srcache_store PUT /memc <span class="nv">$key</span>;
+            fastcgi_pass  unix:/tmp/php-cgi.sock;
+            fastcgi_index index.php;
+            include       fcgi.conf;
+        <span class="o">}</span>
+        location ~ .*<span class="se">\.</span><span class="o">(</span>js|css<span class="o">)</span>?<span class="nv">$ </span><span class="o">{</span>
+            expires  12h;
+        <span class="o">}</span>
+        location ~ .*<span class="se">\.</span><span class="o">(</span>gif|jpg|jpeg|png|bmp|swf<span class="o">)</span><span class="nv">$ </span><span class="o">{</span>
+            expires  30d;
+        <span class="o">}</span>
+        location /status <span class="o">{</span>
+            stub_status  on;
+            access_log  off;
+        <span class="o">}</span>
+        access_log  /home/wwwlogs/access.log  access;
+    <span class="o">}</span>
+include vhost/*.conf;
+<span class="o">}</span>
+</code></pre></div><p>位于<code>vhost</code>目录的<code>lazyzhu.com.conf</code>配置如下：</p><div class="highlight"><pre><code class="bash">log_format  lazyzhu.com  <span class="s1">'$remote_addr - $remote_user [$time_local] $request '</span>
+             <span class="s1">'$status $body_bytes_sent $http_referer '</span>
+             <span class="s1">'$http_user_agent $http_x_forwarded_for'</span>;
+server <span class="o">{</span>
+    listen       80;
+    server_name lazyzhu.com;
+    root  /home/wwwroot/lazyzhu.com;
+    location / <span class="o">{</span>
+        index index.html index.htm index.php default.html default.htm default.php;
+    <span class="o">}</span>
+    include none.conf;
+     <span class="c">## memc-nginx-module</span>
+     location /memc <span class="o">{</span>
+          internal;
+          memc_connect_timeout 100ms;
+          memc_send_timeout    100ms;
+          memc_read_timeout    100ms;
+          <span class="nb">set</span> <span class="nv">$memc_key</span> <span class="nv">$query_string</span>;
+          <span class="nb">set</span> <span class="nv">$memc_exptime</span>       300;
+          memc_pass memcached;
+     <span class="o">}</span>
+     <span class="c">##  folder disable memcached</span>
+     location ^~ /<span class="o">(</span>wp-admin|admin<span class="o">)</span>/ <span class="o">{</span>
+          try_files <span class="nv">$uri</span> <span class="o">=</span>404;
+          fastcgi_pass  unix:/tmp/php-cgi.sock;
+          fastcgi_index index.php;
+          include       fcgi.conf;
+     <span class="o">}</span>
+     <span class="c">## file disable memcached</span>
+     location ~ .*<span class="o">(</span>admin|phpinfo<span class="o">)</span><span class="se">\.</span><span class="o">(</span>php|php5<span class="o">)</span>?<span class="nv">$ </span><span class="o">{</span>
+          try_files <span class="nv">$uri</span> <span class="o">=</span>404;
+          fastcgi_pass  unix:/tmp/php-cgi.sock;
+          fastcgi_index index.php;
+          include       fcgi.conf;
+     <span class="o">}</span>
+     location ~ .*<span class="se">\.</span><span class="o">(</span>php|php5<span class="o">)</span>?<span class="nv">$ </span><span class="o">{</span>
+          <span class="c">## srcache-nginx-module</span>
+          <span class="nb">set</span> <span class="nv">$key</span> <span class="nv">$uri$args</span>;
+          srcache_fetch GET /memc <span class="nv">$key</span>;
+          srcache_store PUT /memc <span class="nv">$key</span>;
+          try_files <span class="nv">$uri</span> <span class="o">=</span>404;
+          fastcgi_pass  unix:/tmp/php-cgi.sock;
+          fastcgi_index index.php;
+          include       fcgi.conf;
+     <span class="o">}</span>
+     location ~ .*<span class="se">\.</span><span class="o">(</span>js|css<span class="o">)</span>?<span class="nv">$ </span><span class="o">{</span>
+          expires  12h;
+     <span class="o">}</span>
+     location ~ .*<span class="se">\.</span><span class="o">(</span>gif|jpg|jpeg|png|bmp|swf<span class="o">)</span><span class="nv">$ </span><span class="o">{</span>
+          expires  30d;
+     <span class="o">}</span>
+     access_log  /home/wwwlogs/lazyzhu.com.log  lazyzhu.com;
+<span class="o">}</span>
+</code></pre></div><br/><h3>9. 启动LNMP服务</h3><div class="highlight"><pre><code class="bash">/etc/init.d/nginx start
+/etc/init.d/mysql start
+/etc/init.d/php-fpm start
+/etc/init.d/memcached start
+</code></pre></div><br/><h3>10. 性能测试比较</h3><p>测试环境是一个VMware虚拟机，操作系统为CentOS 5.8，内存256M，双核。Nginx采用单worker进程，memcached最大使用内存64M，最大并发数为1024。</p><p>测试分为Nginx<code>开启memcached缓存</code>和<code>关闭memcached缓存</code>，都用<code>Apache</code>的<code>ab</code>程序进行压力测试，请求次数为<code>20000</code>，并发数分别为<code>10</code>和<code>100</code>。</p><p>测试程序为<code>phpinfo.php</code>：</p><div class="highlight"><pre><code class="bash">&lt;?
+phpinfo<span class="o">()</span>;
+?&gt;
+</code></pre></div><p>测试结果如下：</p><blockquote><p>关闭memcached缓存-10并发数</p></blockquote><p><img src="/images/2012/2012-09-12-ab-10-nocache.png" alt="ab-10-nocache"/></p><blockquote><p>开启memcached缓存-10并发数</p></blockquote><p><img src="/images/2012/2012-09-12-ab-10-memcached.png" alt="ab-10-memcached"/></p><blockquote><p>关闭memcached缓存-100并发数</p></blockquote><p><img src="/images/2012/2012-09-12-ab-100-nocache.png" alt="ab-100-nocache.png"/></p><blockquote><p>开启memcached缓存-100并发数</p></blockquote><p><img src="/images/2012/2012-09-12-ab-100-memcached.png" alt="ab-100-memcached.png"/></p><p>结论很明显了，Nginx编译memc和srcache后构建的memcached缓存大大优于没有缓存的，性能高出一倍多。</p><p>由于测试php简单、未涉及数据库、测试环境等因素，这个测试结果对比还不明显，在实际应用中差距还要明显得多。</p><br/><h2>可能感兴趣的文章：</h2><ul><li><a href="/Nginx/LNMP-compile-nginx-redis-module-to-build-redis-cache.html">LNMP编译安装Redis构建高速Redis缓存</a></li><li><a href="/Nginx/How-to-use-nginx-GzipStatic-module-to-reduce-resource-usage.html">巧用Nginx的GzipStatic模块来减少服务器资源占用</a></li></ul><div class="ds-thread" data-thread-key="" data-title="" data-author-key="" data-url=""></div> <script>var duoshuoQuery={short_name:"lazyzhu"};(function(){var e=document.createElement("script");e.type="text/javascript",e.async=!0,e.src="http://static.duoshuo.com/embed.js",e.charset="UTF-8",(document.getElementsByTagName("head")[0]||document.getElementsByTagName("body")[0]).appendChild(e)})()</script></div></div><div class="footer"> © 2012 <a href="/about.html">LazyZhu</a> All Rights Reserved. Powered by <a rel="Hostshare" href="http://my.hostshare.cn/cart.php">Hostshare</a> & <a rel="Github" href="http://pages.github.com">Github</a>.</div></body></html>
