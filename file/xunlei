@@ -1,0 +1,159 @@
+#!/bin/sh
+
+# Set Linux PATH Environment Variables
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin:$PATH
+
+# Check If You Are On Supported OS Type
+OS_TYPE=`uname -n`
+if [[ "$OS_TYPE" != "PopoCloud" ]]; then
+    echo -e "\033[31m Error: You must be on PopoCloud to run this script! \033[0m"
+    exit 1
+fi
+
+# Check If You Are Root
+if [[ "$(id -u)" != "0" ]]; then
+    echo -e "\033[31m Error: You must be root to run this script! \033[0m"
+    exit 2
+fi
+
+# Xunlei defintions
+SCRIPT=/etc/init.d/xunlei
+DESC="Xunlei-Remote"
+PREFIX=/usr/local/xunlei
+BIN=portal
+DAEMON=${PREFIX}/portal
+CFG_DIR=${PREFIX}/cfg
+MOUNT_CFG=${CFG_DIR}/thunder_mounts.cfg
+LIB_DIR=${PREFIX}/lib
+LIB_A=${LIB_DIR}/ETMDaemon
+LIB_B=${LIB_DIR}/EmbedThunderManager
+PID_FILE=${PREFIX}/xunlei.pid
+DOWNLOAD_URL=http://lazyzhu.com/file/xunlei_arm_le_armv5te.tar.gz
+
+# Check file/folder if exist
+[[ -f $DAEMON ]] && [[ -f $LIB_A ]] && [[ -f $LIB_B ]] || exit 3
+
+# Check folders
+[[ -d $CFG_DIR ]] || mkdir -p $CFG_DIR
+
+# Check file permissions
+[[ -x $DAEMON ]] || chmod +x $DAEMON
+[[ -x $LIB_A ]] || chmod +x $LIB_A
+[[ -x $LIB_B ]] || chmod +x $LIB_B
+
+# Check wget
+[[ -f /usr/bin/wget ]] || ln -s /bin/busybox /usr/bin/wget
+
+do_mounts_cfg() {
+    echo "avaliable_mount_path_pattern" >$MOUNT_CFG
+    echo "{" >>$MOUNT_CFG
+    MOUNT_LIST=`df -a | grep "/dev/sd*\|/dev/hd*" | awk '{print $6}'`
+    for MOUNT in $MOUNT_LIST; do echo $MOUNT >>$MOUNT_CFG; done
+    echo "}" >>$MOUNT_CFG
+
+}
+
+do_start() {
+    if [[ -r $PID_FILE ]]; then
+        read PID <$PID_FILE
+        if [[ -d /proc/${PID} ]]; then
+            echo -e "\033[33m $DESC already running. \033[0m"
+        else
+            echo -e "\033[33m $DESC accidently crashed. \033[0m"
+            rm -f $PID_FILE
+            do_mounts_cfg && $DAEMON >/dev/null 2>&1
+            if [[ "$?" = "0" ]]; then
+                PID=`pgrep ETMDaemon`
+                echo $PID > $PID_FILE
+                echo -e "\033[32m $DESC successfully restarted. \033[0m"
+            else
+                rm -f $PID_FILE
+                echo -e "\033[31m $DESC failed to start. \033[0m"
+            fi
+        fi
+    else
+        do_mounts_cfg && $DAEMON >/dev/null 2>&1
+        if [[ "$?" = "0" ]]; then
+            PID=`pgrep ETMDaemon`
+            echo $PID > $PID_FILE
+            echo -e "\033[32m $DESC successfully started. \033[0m"
+        else
+            rm -f $PID_FILE
+            echo -e "\033[31m $DESC failed to start. \033[0m"
+        fi
+    fi
+}
+
+do_stop() {
+        if [[ -r $PID_FILE ]]; then
+            read PID <$PID_FILE
+            if [[ -d /proc/${PID} ]]; then
+               $DAEMON -s >/dev/null 2>&1
+               rm -f $PID_FILE
+               echo -e "\033[32m $DESC successfully stoped. \033[0m"
+            else
+               $DAEMON -s >/dev/null 2>&1
+               rm -f $PID_FILE
+               echo -e "\033[33m $DESC accidently crashed. \033[0m"
+            fi
+        else
+            echo -e "\033[33m $DESC appearlly not running. \033[0m"
+        fi
+}
+
+do_restart() {
+    do_stop
+    sleep 2
+    do_start
+}
+
+do_status() {
+    LAN_IP=`ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'`
+    PORT=9000
+    STATUS=`wget -t 3 -T 3 -qO- http://${LAN_IP}:${PORT}/getsysinfo`
+    echo $STATUS
+}
+
+do_check() {
+    LAN_IP=`ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'`
+    PORT=9000
+    STATUS=`wget -t 3 -T 3 -qO- http://${LAN_IP}:${PORT}/getsysinfo`
+    echo $STATUS | grep "\[ 0, 1, 1, 1, \""
+    if [[ "$?" != "0" ]]; then
+        /etc/init.d/xunlei restart
+    fi
+}
+
+do_setup() {
+    [[ -d $PREFIX ]] && rm -rf $PREFIX
+    wget $DOWNLOAD_URL >/dev/null 2>&1
+    tar -zxvf xunlei_arm_le_armv5te.tar.gz -C /usr/local >/dev/null 2>&1
+}
+
+# See how we were called
+case "$1" in
+  start)
+  do_start
+  ;;
+  stop)
+  do_stop
+  ;;
+  restart)
+  do_restart
+  ;;
+  status)
+  do_status
+  ;;
+  check)
+  do_check
+  ;;
+  setup)
+  do_setup
+  ;;
+  *)
+  echo -e "\033[36m Usage: $SCRIPT {start|stop|restart|status|setup} \033[0m"
+  exit 4
+  ;;
+esac
+
+exit 0
