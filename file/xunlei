@@ -16,6 +16,13 @@ if [[ "$(id -u)" != "0" ]]; then
     exit 2
 fi
 
+# Check network if ok
+ping -c 1 -w 3 baidu.com >/dev/null 2>&1
+if [[ "$?" != "0" ]]; then
+   echo -e "\033[31m Your network error. \033[0m"
+   exit 3
+fi
+
 # Xunlei defintions
 DESC="Xunlei-Remote"
 SCRIPT=/opt/bin/xunlei
@@ -84,6 +91,7 @@ do_stop() {
         else
             echo -e "\033[33m $DESC appearlly not running. \033[0m"
         fi
+        $DAEMON -s >/dev/null 2>&1
 }
 
 do_restart() {
@@ -96,7 +104,11 @@ do_status() {
     LAN_IP=`ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'`
     PORT=9000
     STATUS=`wget -t 3 -T 3 -qO- http://${LAN_IP}:${PORT}/getsysinfo`
-    echo $STATUS
+    if [[ "$?" == "0" ]]; then
+        echo $STATUS
+    else
+        echo -e "\033[33m $DESC appearlly not running. \033[0m"
+    fi
 }
 
 do_check() {
@@ -113,11 +125,13 @@ do_check() {
 }
 
 do_setup() {
+    do_stop
     echo -e "\033[32m $DESC installing ... \033[0m"
-    [[ -d $PREFIX ]] && rm -rf $PREFIX
+    rm -rf $DAEMON $LIB_A $LIB_B
     wget $DOWNLOAD_URL >/dev/null 2>&1
     tar -zxvf xunlei_arm_le_armv5te.tar.gz -C /opt >/dev/null 2>&1
     rm -rf xunlei_arm_le_armv5te.tar.gz
+    $SCRIPT
 }
 
 # Check file/folder if exist
