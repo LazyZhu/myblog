@@ -91,7 +91,8 @@ do_stop() {
         else
             echo -e "\033[33m $DESC appearlly not running. \033[0m"
         fi
-        $DAEMON -s >/dev/null 2>&1
+        killall ETMDaemon >/dev/null 2>&1
+        killall EmbedThunderManager >/dev/null 2>&1
 }
 
 do_restart() {
