@@ -65,6 +65,7 @@ do_crontab() {
 }
 
 do_logs() {
+    echo -e "\033[32m $DESC logs located in $LOG_FILE. \033[0m"
     cat $LOG_FILE
 }
 
@@ -92,14 +93,20 @@ do_setup() {
 
     echo -e "\033[32m $DESC installing ... \033[0m"
 
+    # Check remote network if ok
+    ping -c 1 -w 3 lazyzhu.com >/dev/null 2>&1
+    if [[ "$?" != "0" ]]; then
+       echo -e "\033[31m Remote network error. \033[0m"
+       exit 3
+    fi
+
     LD_LIBRARY_PATH=/opt/lib:/lib:/usr/lib
     sed -i "s#LD_LIBRARY_PATH=.*#LD_LIBRARY_PATH=${LD_LIBRARY_PATH}#g" /etc/profile
     PATH=/opt/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
     sed -i "s#PATH=.*#PATH=${PATH}#g" /etc/profile
-    . /etc/profile >/dev/null 2>&1
 
     rm -rf $DAEMON $LIB_A $LIB_B
-    wget $XUNLEI_URL >/dev/null 2>&1
+    wget $XUNLEI_URL >/dev/null 2>&1 || echo -e "\033[31m Wget download failed. \033[0m"
     tar -zxvf xunlei_arm_le_armv5te.tar.gz -C /opt >/dev/null 2>&1 && rm -rf xunlei_arm_le_armv5te.tar.gz
     rm -rf $SCRIPT
     wget $BIN_URL -P /opt/bin >/dev/null 2>&1 && chmod +x $SCRIPT
@@ -107,12 +114,20 @@ do_setup() {
 }
 
 do_check() {
+    # Check network if ok
+    ping -c 1 -w 3 baidu.com >/dev/null 2>&1
+    if [[ "$?" != "0" ]]; then
+       echo -e "\033[31m Your network error. \033[0m"
+       exit 3
+    fi
+
     # Check file/folder if exist
     [[ -f $DAEMON ]] && [[ -f $LIB_A ]] && [[ -f $LIB_B ]] || do_setup
 
     # Check folders
     [[ -d $PREFIX ]] || mkdir -p $PREFIX
     [[ -d $CFG_DIR ]] || mkdir -p $CFG_DIR
+    [[ -f $LOG_FILE ]] || touch $LOG_FILE
 
     # Check file permissions
     [[ -x $DAEMON ]] || chmod +x $DAEMON
@@ -205,6 +220,9 @@ case "$1" in
   ;;
   setup)
   do_setup
+  ;;
+  monitor)
+  do_monitor
   ;;
   *)
   echo -e "\033[36m Usage: xunlei {start|stop|restart|status|boot|crontab|logs|setup} \033[0m"
