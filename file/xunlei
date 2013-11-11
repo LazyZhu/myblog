@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Set Linux PATH Environment Variables
-export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin:$PATH
+export PATH=/opt/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin:$PATH
 
 # Check If You Are On Supported OS Type
 OS_TYPE=`uname -n`
@@ -16,12 +16,8 @@ if [[ "$(id -u)" != "0" ]]; then
     exit 2
 fi
 
-# Check network if ok
-ping -c 1 -w 3 baidu.com >/dev/null 2>&1
-if [[ "$?" != "0" ]]; then
-   echo -e "\033[31m Your network error. \033[0m"
-   exit 3
-fi
+# Check wget
+[[ -f /usr/bin/wget ]] || ln -s /bin/busybox /usr/bin/wget
 
 # Xunlei defintions
 DESC="Xunlei-Remote"
@@ -34,7 +30,9 @@ LIB_DIR=${PREFIX}/lib
 LIB_A=${LIB_DIR}/ETMDaemon
 LIB_B=${LIB_DIR}/EmbedThunderManager
 PID_FILE=${PREFIX}/xunlei.pid
-DOWNLOAD_URL=http://lazyzhu.com/file/xunlei_arm_le_armv5te.tar.gz
+LOG_FILE=${PREFIX}/xunlei.log
+XUNLEI_URL=http://lazyzhu.com/file/xunlei_arm_le_armv5te.tar.gz
+BIN_URL=http://lazyzhu.com/file/xunlei
 
 do_mounts_cfg() {
     echo "avaliable_mount_path_pattern" >$MOUNT_CFG
@@ -45,7 +43,86 @@ do_mounts_cfg() {
 
 }
 
+do_boot() {
+    if ! egrep -q "xunlei start" /root/rc.popocloud; then
+        sed -i "/while true/i\xunlei start" /root/rc.popocloud
+        echo -e "\033[32m $DESC boot added. \033[0m"
+    else
+        sed -i "/xunlei start/d" /root/rc.popocloud
+        echo -e "\033[32m $DESC boot removed. \033[0m"
+    fi
+}
+
+do_crontab() {
+    crontab -l | grep "xunlei monitor" >/dev/null 2>&1
+    if [[ "$?" != "0" ]]; then
+        echo "*/15 * * * * $SCRIPT monitor >>$LOG_FILE " >>/var/spool/cron/crontabs/root
+        echo -e "\033[32m $DESC crontab added. \033[0m"
+    else
+        crontab -l 2>/dev/null | grep -v "xunlei monitor" | crontab -
+        echo -e "\033[32m $DESC crontab removed. \033[0m"
+    fi
+}
+
+do_logs() {
+    cat $LOG_FILE
+}
+
+do_stop() {
+        if [[ -r $PID_FILE ]]; then
+            read PID <$PID_FILE
+            if [[ -d /proc/${PID} ]]; then
+               $DAEMON -s >/dev/null 2>&1
+               rm -f $PID_FILE
+               echo -e "\033[32m $DESC successfully stoped. \033[0m"
+            else
+               $DAEMON -s >/dev/null 2>&1
+               rm -f $PID_FILE
+               echo -e "\033[33m $DESC accidently crashed. \033[0m"
+            fi
+        else
+            echo -e "\033[33m $DESC appearlly not running. \033[0m"
+        fi
+        killall ETMDaemon >/dev/null 2>&1
+        killall EmbedThunderManager >/dev/null 2>&1
+}
+
+do_setup() {
+    do_stop
+
+    echo -e "\033[32m $DESC installing ... \033[0m"
+
+    LD_LIBRARY_PATH=/opt/lib:/lib:/usr/lib
+    sed -i "s#LD_LIBRARY_PATH=.*#LD_LIBRARY_PATH=${LD_LIBRARY_PATH}#g" /etc/profile
+    PATH=/opt/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
+    sed -i "s#PATH=.*#PATH=${PATH}#g" /etc/profile
+    . /etc/profile >/dev/null 2>&1
+
+    rm -rf $DAEMON $LIB_A $LIB_B
+    wget $XUNLEI_URL >/dev/null 2>&1
+    tar -zxvf xunlei_arm_le_armv5te.tar.gz -C /opt >/dev/null 2>&1 && rm -rf xunlei_arm_le_armv5te.tar.gz
+    rm -rf $SCRIPT
+    wget $BIN_URL -P /opt/bin >/dev/null 2>&1 && chmod +x $SCRIPT
+    $SCRIPT
+}
+
+do_check() {
+    # Check file/folder if exist
+    [[ -f $DAEMON ]] && [[ -f $LIB_A ]] && [[ -f $LIB_B ]] || do_setup
+
+    # Check folders
+    [[ -d $PREFIX ]] || mkdir -p $PREFIX
+    [[ -d $CFG_DIR ]] || mkdir -p $CFG_DIR
+
+    # Check file permissions
+    [[ -x $DAEMON ]] || chmod +x $DAEMON
+    [[ -x $LIB_A ]] || chmod +x $LIB_A
+    [[ -x $LIB_B ]] || chmod +x $LIB_B
+}
+
 do_start() {
+    do_check
+
     if [[ -r $PID_FILE ]]; then
         read PID <$PID_FILE
         if [[ -d /proc/${PID} ]]; then
@@ -76,25 +153,6 @@ do_start() {
     fi
 }
 
-do_stop() {
-        if [[ -r $PID_FILE ]]; then
-            read PID <$PID_FILE
-            if [[ -d /proc/${PID} ]]; then
-               $DAEMON -s >/dev/null 2>&1
-               rm -f $PID_FILE
-               echo -e "\033[32m $DESC successfully stoped. \033[0m"
-            else
-               $DAEMON -s >/dev/null 2>&1
-               rm -f $PID_FILE
-               echo -e "\033[33m $DESC accidently crashed. \033[0m"
-            fi
-        else
-            echo -e "\033[33m $DESC appearlly not running. \033[0m"
-        fi
-        killall ETMDaemon >/dev/null 2>&1
-        killall EmbedThunderManager >/dev/null 2>&1
-}
-
 do_restart() {
     do_stop
     sleep 2
@@ -112,11 +170,8 @@ do_status() {
     fi
 }
 
-do_check() {
-    LAN_IP=`ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'`
-    PORT=9000
-    STATUS=`wget -t 3 -T 3 -qO- http://${LAN_IP}:${PORT}/getsysinfo`
-    echo $STATUS | grep "\[ 0, 1, 1, 1, \"" >/dev/null 2>&1
+do_monitor() {
+    do_status | grep "\[ 0, 1, 1, 1, \"" >/dev/null 2>&1
     if [[ "$?" == "0" ]]; then
         echo "$(date +"%Y-%m-%d_%T") $DESC looks ok."
     else
@@ -124,31 +179,6 @@ do_check() {
         echo "$(date +"%Y-%m-%d_%T") $DESC goes error, try to restart."
     fi
 }
-
-do_setup() {
-    do_stop
-    echo -e "\033[32m $DESC installing ... \033[0m"
-    rm -rf $DAEMON $LIB_A $LIB_B
-    wget $DOWNLOAD_URL >/dev/null 2>&1
-    tar -zxvf xunlei_arm_le_armv5te.tar.gz -C /opt >/dev/null 2>&1
-    rm -rf xunlei_arm_le_armv5te.tar.gz
-    $SCRIPT
-}
-
-# Check file/folder if exist
-[[ -f $DAEMON ]] && [[ -f $LIB_A ]] && [[ -f $LIB_B ]] || do_setup
-
-# Check folders
-[[ -d $PREFIX ]] || mkdir -p $PREFIX
-[[ -d $CFG_DIR ]] || mkdir -p $CFG_DIR
-
-# Check file permissions
-[[ -x $DAEMON ]] || chmod +x $DAEMON
-[[ -x $LIB_A ]] || chmod +x $LIB_A
-[[ -x $LIB_B ]] || chmod +x $LIB_B
-
-# Check wget
-[[ -f /usr/bin/wget ]] || ln -s /bin/busybox /usr/bin/wget
 
 # See how we were called
 case "$1" in
@@ -164,14 +194,20 @@ case "$1" in
   status)
   do_status
   ;;
-  check)
-  do_check
+  boot)
+  do_boot
+  ;;
+  crontab)
+  do_crontab
+  ;;
+  logs)
+  do_logs
   ;;
   setup)
   do_setup
   ;;
   *)
-  echo -e "\033[36m Usage: $SCRIPT {start|stop|restart|status|check|setup} \033[0m"
+  echo -e "\033[36m Usage: xunlei {start|stop|restart|status|boot|crontab|logs|setup} \033[0m"
   exit 4
   ;;
 esac
