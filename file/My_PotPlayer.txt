@@ -1,0 +1,40 @@
+
+还在等便携版?一键下载打包属于你自己的PotPlayer_32bit!
+
+
+bin 目录: 都是可执行程序，来源：
+7-Zip 9.32 alpha:
+http://sourceforge.net/p/sevenzip/discussion/45797/thread/49e6a4d4/
+http://dl.7-zip.org/7z932.exe
+wget-1.15-win32:
+http://eternallybored.org/misc/wget/wget.exe
+pev-0.40:
+http://sourceforge.net/projects/pev/files/pev-0.40/pev-0.40_x86.exe/download
+
+
+unneeded-files.txt # 删除的文件列表，可自定义
+unneeded-folders.txt # 删除的文件夹列表，可自定义
+
+
+custom 目录: 自定义的PotPlayer文件，注意保持目录结构，例如：
+Module\MediaInfo.dll # 汉化版
+Skins\YouTube_TitleBar_Slim_ha2.dsf # 皮肤
+PotIcons.dll # 自定义图标
+PotPlayerMini.ini # 便携版配置文件
+......
+
+
+同时支持Dev/Public，切换方法:
+记事本打开 My_PotPlayer.bat 修改 set SOURCE=Dev 或者 set SOURCE=Public 后保存。
+
+
+双击运行 My_PotPlayer.bat
+
+脚本结束后，目录下 My_PotPlayer_xxx_1.x.xxxxx.0 就是便携版。
+
+注意脚本所在路径里面不要有空格。
+目前只支持32位版，64位的自己改脚本里面的下载地址吧。
+
+Win7_32bit 测试通过，由于个别系统原因，如权限等，有可能导致脚本无法运行。
+
+
